@@ -1,0 +1,204 @@
+---
+title: "Health Project Presentation"
+author: "Naveed Alboudwarej"
+date: "2024-11-04"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+data<-read.csv("C:/Users/19258/Downloads/Sleep_health_and_lifestyle_dataset (1).csv")
+```
+
+## Dataset overview
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+head(data[, -c(1, (ncol(data)-3):ncol(data))])
+```
+## Libraries used
+- ggplot2
+- dplyr
+- tidyr
+- reshape2
+
+## Key terms
+- Systolic = pressure in your arteries when heart beats
+- Diastolic = pressure in arteries when your heart is relaxed between beats
+
+## Overarching Question
+- How do age, gender and occupation affect stress levels, and how do these factors influence overall sleep, heart rate and blood pressure
+
+##
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(dplyr)
+
+data <- data %>%
+  mutate(Ages = case_when(Age >= 27 & Age <= 35 ~ "27-35", Age >= 36 & Age <= 46 ~ "36-46", Age >= 47 & Age <= 59 ~ "47-59")) %>%filter(!is.na(Ages))
+
+male_plot <- ggplot(data = filter(data, Gender == "Male"), aes(x = Occupation, y = Stress.Level, color = Ages)) +
+  geom_jitter(width = 0.1, alpha = 0.4) +
+  labs(title = "Male Stress Level Per Job",x = "Job", y = "Stress Level") +theme(axis.text.x = element_text(angle = 90)) + scale_color_manual(values = c("black", "red", "green"))
+
+
+
+print(male_plot)
+
+```
+
+##
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+female_plot <- ggplot(data = filter(data, Gender == "Female"),aes(x = Occupation, y = Stress.Level, color = Ages)) +
+  geom_jitter(width = 0.1, alpha = 0.4) +
+  labs(title = "Female Stress Level Per Job",x = "Job", y = "Stress Level") +theme(axis.text.x = element_text(angle = 90)) + scale_color_manual(values = c("black", "red", "green"))
+print(female_plot)
+
+```
+
+## Average stress level
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+data <- data %>%
+  mutate(Age_Range = case_when(Age >= 27 & Age <= 35 ~ '27-35',Age >= 36 & Age<= 46 ~ '36-46',Age >= 47 & Age <= 59 ~ '47-59',TRUE ~ NA_character_))
+
+average_stress <- data %>%
+  filter(!is.na(Age_Range)) %>%
+  group_by(Gender, Age_Range, Occupation) %>%
+  summarize(Average_Stress_Level = mean(Stress.Level, na.rm = TRUE)) %>%
+  arrange(Gender, Age_Range, Occupation)
+
+print(average_stress)
+
+```
+
+##
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+data <- data %>%
+  mutate(Age_Group = case_when(Age >= 27 & Age <= 35 ~ "27-35",Age >= 36 & Age <= 46 ~ "36-46",Age >= 47 & Age <= 59 ~ "47-59",TRUE ~ NA_character_)) %>%
+  filter(!is.na(Age_Group))
+
+
+ggplot(data, aes(x = Occupation, y = Sleep.Duration, fill = Gender)) +
+  geom_boxplot() +
+  facet_wrap(~Age_Group) +
+  labs(title = "Sleep Duration by Occupation, Gender, and Age Group (27-59)", y = "Sleep Duration (Hours)", x = "Occupation") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+##
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+data <- data %>%
+  mutate(Age_Group = case_when(Age >= 27 & Age <= 35 ~ "27-35",Age >= 36 & Age <= 46 ~ "36-46",Age >= 47 & Age <= 59 ~ "47-59",TRUE ~ NA_character_)) %>%
+  filter(!is.na(Age_Group))
+
+ggplot(data, aes(x = Occupation, y = Quality.of.Sleep, fill = Gender)) +
+  geom_boxplot() +
+  facet_wrap(~Age_Group) + labs(title = "Quality of Sleep by Occupation, Gender, and Age Group (27-59)", y = "Quality of Sleep", x = "Occupation") +     theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+##
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+data <- data %>%
+  mutate(Age_Group = case_when(Age >= 27 & Age <= 35 ~ "27-35",Age >= 36 & Age <= 46 ~ "36-46",Age >= 47 & Age <= 59 ~ "47-59",TRUE ~ "Other" ))
+
+
+ggplot(data, aes(x = Stress.Level, y = Sleep.Duration, color = Gender)) +
+  geom_point(alpha = 1) +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_wrap(~ Age_Group) +
+  labs(title = "Correlation between Stress Level and Sleep Duration",x = "Stress Level", y = "Sleep Duration (Hours)")
+
+```
+
+##
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+data <- data %>%
+  mutate(Age_Group = case_when(Age >= 27 & Age <= 35 ~ "27-35",Age >= 36 & Age <= 46 ~ "36-46",Age >= 47 & Age <= 59 ~ "47-59",TRUE ~ "Other" ))
+
+ggplot(data, aes(x = Stress.Level, y = Quality.of.Sleep, color = Gender)) +
+  geom_point(alpha = 1) +
+  geom_smooth(method="lm", se = FALSE) +
+  facet_wrap(~ Age_Group) +
+  labs(title = "Correlation between Stress Level and Quality of Sleep", x = "Stress Level",y = "Quality of Sleep")
+```
+
+##
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+data <- data %>%
+  separate(Blood.Pressure, into = c("Systolic.BP", "Diastolic.BP"), sep = "/", convert = TRUE)
+
+data <- data %>%
+  mutate(Age_Group = case_when(Age >= 27 & Age <= 35 ~ "27-35",Age >= 36 & Age <= 46 ~ "36-46", Age >= 47 & Age <= 59 ~ "47-59",TRUE ~ "Other"))
+
+data_filtered <- data %>%
+  filter(Age_Group != "Other")
+
+
+ggplot(data_filtered, aes(x = Stress.Level, y = Heart.Rate, color = Gender)) +
+  geom_point(alpha = 0.6) +geom_smooth(method = "lm", se = FALSE) +facet_wrap(~ Age_Group + Gender) +
+  labs(title = "Comparison of Stress Level and Heart Rate by Gender and Age Group",x = "Stress Level",y = "Heart Rate (BPM)")
+
+
+```
+
+##
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(data_filtered, aes(x = Stress.Level, y = Systolic.BP, color = Gender)) +
+  geom_point(alpha = 0.6) + geom_smooth(method = "lm", se = FALSE) + facet_wrap(~ Age_Group + Gender) +
+  labs(title = "Comparison of Stress Level and Systolic Blood Pressure by Gender and Age Group", x = "Stress Level", y = "Systolic Blood Pressure (mmHg)")
+```
+
+##
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(data_filtered, aes(x = Stress.Level, y = Diastolic.BP, color = Gender)) +
+  geom_point(alpha = 0.6) + geom_smooth(method = "lm", se = FALSE) + facet_wrap(~ Age_Group + Gender) +
+  labs(title = "Comparison of Stress Level and Diastolic Blood Pressure by Gender and Age Group", x = "Stress Level", y = "Diastolic Blood Pressure (mmHg)")
+```
+
+
+
+
+
+
+
+
+
+
+## Correlation Matrix
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+
+if ("BMI.Category" %in% colnames(data) && (is.character(data$BMI.Category) || is.factor(data$BMI.Category))) {
+  data$BMI.Category <- as.numeric(factor(data$BMI.Category))
+}
+
+if ("Occupation" %in% colnames(data)) {
+  data$Occupation <- as.numeric(factor(data$Occupation))
+}
+
+if ("Gender" %in% colnames(data)) {
+  data$Gender <- as.numeric(factor(data$Gender))
+}
+
+numeric_data <- data %>%
+  select(-Person.ID, -Sleep.Disorder) %>%
+  select_if(is.numeric)
+
+correlation_matrix <- cor(numeric_data, use = "complete.obs")
+
+correlation_melted <- melt(correlation_matrix)
+
+ggplot(data = correlation_melted, aes(x = Var1, y = Var2, fill = value)) + geom_tile(color = "white") + scale_fill_gradient2(low = "orange", high = "red", mid = "white", midpoint = 0, limit = c(-1, 1), space = "Lab", name = "Correlation") +
+  geom_text(aes(label = round(value, 2)), color = "black", size = 2) +
+  theme_minimal() +theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 10, hjust = 1)) +coord_fixed() + labs(title = "Correlation Matrix")
+```
+
+## Takeaways
+
+These findings suggest that age, gender, and occupation play a role in stress levels, which, in turn, indeed affect sleep and blood pressure. However, it is interesting to note that these factors don’t necessarily have the highest correlation with each other. Other factors, such as age and overall sleep, gender and stress, and occupation and heart rate, are more closely related than previously thought
+
